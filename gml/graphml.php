@@ -1,0 +1,391 @@
+<?php
+
+/**
+ * Description of graphml
+ *
+ * @author JKeySZR 
+ * @link   https://github.com/JKeySZR/GraphML
+ */
+define('_MAX_NODE_HEIGHT', 50);
+define('_MAX_NODE_PER_COLUMN', 5);
+
+class GraphML {
+
+  protected $iNodeYPos = 10;
+
+  /**
+   *  Порядковый номер, индентификатор узла, которые однозначно его позиционирует
+   * @var int 
+   */
+  protected $iNodeNumber = 0;
+  protected $iNodeRows = 1;
+  protected $iNodeColumn = 1;
+  protected $iMaxNodeHeight = _MAX_NODE_HEIGHT;
+  //---------Nodes options
+  protected $defNodeFill = array(
+    'color' => '#FFCC00',
+    'transparent' => 'false',
+  );
+  protected $NodeFill;
+  protected $defNodeBorderStyle = array(
+    'color' => '#000000',
+    'type' => 'line',
+    'width' => '1.0',
+  );
+  protected $NodeBorderStyle;
+  protected $defNodeLabel = array(
+    'alignment' => 'center',
+    'autoSizePolicy' => 'content',
+    'fontFamily' => 'Dialog',
+    'fontSize' => '13',
+    'fontStyle' => 'bold',
+    'hasBackgroundColor' => 'false',
+    'hasLineColor' => 'false',
+    'height' => '19.92626953125',
+    'modelName' => 'internal',
+    'modelPosition' => 'c',
+    'textColor' => '#000000',
+    'visible' => 'true',
+    'width' => '33.6181640625',
+    'x' => '67.69091796875',
+    'y' => '26.701171875',
+  );
+  protected $NodeLabel;
+
+  /**
+   *  ID линии связи
+   * @var int  
+   */
+  protected $iEdgeNumber = 0;
+  protected $sTemplateDir = 'templates/';
+  protected $sNodeTemplate; // шаблон узла
+  protected $sEdgeTemplate; // шаблон связи
+  protected $sFullTemplate; // основной шаблон
+  protected $syEdTemplate;
+  protected $aData;
+
+  /**
+   * Временая переменная обнуляется в процедуре ...
+   * @var type array  
+   */
+  protected $aMethods;
+  protected $aAttributes;
+  protected $sNodeLabel;
+
+  /**
+   * Сюда складывается в текстовом виде куски xml в 
+   * котором находятся характеристики узла
+   * @var string 
+   */
+  protected $sGeneratedNodes;
+
+  /**
+   * Сюда складывается в текстовом виде куски xml в 
+   * котором находятся характеристики узла
+   * @var type string  
+   */
+  protected $sGeneratedEdges;
+
+  /**
+   * Constructor and executor 
+   * 
+   * @param string $sDirectory  Initial directory, this is the first dir where .php files will be searched 
+   * @param string $sExcludeDir Don't read directories matching $sExcludeDir 
+   */
+  public function __construct($sDirectory = '.', $sExcludeDir = '') {
+
+    $this->setNodeDefault();
+
+    $this->sBaseDir = dirname(__FILE__) . '/';
+
+    $this->sDirectory = $sDirectory;
+
+    /* Let's read the template files */
+    if (is_file($this->sBaseDir . $this->sTemplateDir . 'node.tpl')) {
+      $this->sNodeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/node.tpl');
+    }
+    else {
+      echo 'Node template file not found, exiting.' . "\n";
+      exit(1);
+    }
+    if (is_file($this->sBaseDir . $this->sTemplateDir . '/edge.tpl')) {
+      $this->sEdgeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/edge.tpl');
+    }
+    else {
+      echo 'Edge template file not found, exiting.' . "\n";
+      exit(1);
+    }
+    if (is_file($this->sBaseDir . $this->sTemplateDir . '/full.tpl')) {
+      $this->sFullTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/full.tpl');
+    }
+    else {
+      echo 'Full template file not found, exiting.' . "\n";
+      exit(1);
+    }
+
+    if (is_file($this->sBaseDir . $this->sTemplateDir . '/yed.tpl')) {
+      $this->syEdTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/yed.tpl');
+    }
+    else {
+      echo 'yEd template file not found, exiting.' . "\n";
+      exit(1);
+    }
+  }
+
+  private function setNodeDefault() {
+    $this->NodeFill = $this->defNodeFill;
+    $this->NodeBorderStyle = $this->defNodeBorderStyle;
+    $this->NodeLabel = $this->defNodeLabel;
+  }
+
+  /**
+   *  Create a node for it in the graph 
+   * @return type int присвоенный ID graph
+   */
+  protected function createNodes() {
+    $iNodeHeight = (count($this->aAttributes) + count($this->aMethods)) * 15 + 50;
+    if ($iNodeHeight > $this->iMaxNodeHeight) {
+      $this->iMaxNodeHeight = $iNodeHeight;
+    }
+    $iNodeNumber = $this->iNodeNumber;
+    //Создает XML-строку и XML-документ при помощи DOM 
+    $dom = new DOMDocument();
+    $dom->formatOutput = true; // мы хотим красивый вывод
+    $dom->loadXML($this->syEdTemplate);
+
+    $node = $dom->createElement('node');
+    $node->setAttribute('id', 'n' . $this->iNodeNumber++);
+
+    $data = $dom->createElement('data');
+    $data->setAttribute('key', 'd2');
+    $node->appendChild($data);
+    unset($data);
+
+    $data2 = $dom->createElement('data');
+    $data2->setAttribute('key', 'd3');
+    $UMLClass = $dom->createElement('y:UMLClassNode');
+
+    //--- Geometry shape
+    $geometry = $dom->createElement('y:Geometry');
+    $geometry->setAttribute('height', $iNodeHeight);
+    $geometry->setAttribute('width', '169.0');
+    $geometry->setAttribute('x', ($this->iNodeColumn * 200));
+    $geometry->setAttribute('y', ($this->iNodeYPos));
+    $UMLClass->appendChild($geometry);
+    unset($geometry);
+
+    //--- Fill element
+    $fill = $dom->createElement('y:Fill');
+    foreach ($this->NodeFill as $key => $value) {
+      $fill->setAttribute($key, $value);
+    }
+    $UMLClass->appendChild($fill);
+    unset($fill);
+
+    //--- BorderStyle
+    $BorderStyle = $dom->createElement('y:BorderStyle');
+    foreach ($this->NodeBorderStyle as $key => $value) {
+      $BorderStyle->setAttribute($key, $value);
+    }
+    $UMLClass->appendChild($BorderStyle);
+    unset($BorderStyle);
+
+    //--- NodeLabel
+    $NodeLabel = $dom->createElement('y:NodeLabel', $this->sNodeLabel);
+    foreach ($this->NodeLabel as $key => $value) {
+      $NodeLabel->setAttribute($key, $value);
+    }
+    $UMLClass->appendChild($NodeLabel);
+    unset($NodeLabel);
+
+    //--- UML Section start
+    $UML = $dom->createElement('y:UML');
+    $UML->setAttribute('clipContent', 'true');
+    $UML->setAttribute('constraint', '');
+    $UML->setAttribute('omitDetails', 'false');
+    $UML->setAttribute('stereotype', '');
+    $UML->setAttribute('use3DEffect', 'true');
+
+    $AttributeLabel = $dom->createElement('y:AttributeLabel', implode("\n", $this->aAttributes));
+    $UML->appendChild($AttributeLabel);
+    unset($AttributeLabel);
+
+    $MethodLabel = $dom->createElement('y:MethodLabel', implode("\n", $this->aMethods));
+    $UML->appendChild($MethodLabel);
+    unset($MethodLabel);
+
+    $UMLClass->appendChild($UML);
+    unset($UML);
+    //--- UML Section stop
+
+    $data2->appendChild($UMLClass);
+    unset($UMLClass);
+    $node->appendChild($data2);
+    unset($data2);
+    $graph = $dom->getElementsByTagName('graph')->item(0);
+    $graph->appendChild($node);
+    unset($graph);
+    $rr = $dom->saveXML($node);
+    $dbg = 0;
+    $this->sGeneratedNodes .= $dom->saveXML($node);
+    unset($node);
+    unset($dom);
+
+    /* If we reach the maximum node in the given row then "create" a new row */
+    if ($this->iNodeNumber % _MAX_NODE_PER_COLUMN == 0) {
+      $this->iLastNodeRows = $this->iNodeRows;
+      $this->iNodeRows++;
+      $this->iNodeColumn = 0;
+      $this->iNodeYPos += $this->iMaxNodeHeight + 50;
+      $this->iMaxNodeHeight = _MAX_NODE_HEIGHT;
+    }
+    $this->iNodeColumn++;
+
+    return $iNodeNumber;
+  }
+
+  /**
+   * 
+   * This method is for finding relations between classes and creates the appropriate edges 
+   * 
+   */
+  protected function createEdges() {
+
+    //Создает XML-строку и XML-документ при помощи DOM 
+    $dom = new DOMDocument();
+    $dom->formatOutput = true; // мы хотим красивый вывод
+    $dom->loadXML($this->syEdTemplate);
+
+    $edge = $dom->createElement('edge');
+    $edge->setAttribute('id', 'e' . $this->iEdgeNumber++);
+    $edge->setAttribute('source', '');
+    $edge->setAttribute('target', '');
+
+
+    $data = $dom->createElement('data');
+    $data->setAttribute('key', 'd6');
+    $PolyLineEdge = $dom->createElement('y:PolyLineEdge');
+    $Path = $dom->createElement('y:Path');
+    $Path->setAttribute('sx', '0.0');
+    $Path->setAttribute('sy', '0.0');
+    $Path->setAttribute('tx', '0.0');
+    $Path->setAttribute('tx', '0.0');
+    $PolyLineEdge->appendChild($Path);
+    unset($Path);
+
+    $LineStyle = $dom->createElement('y:LineStyle');
+    $LineStyle->setAttribute('color', '#000000');
+    $LineStyle->setAttribute('type', 'line');
+    $LineStyle->setAttribute('width', '1.0');
+    $PolyLineEdge->appendChild($LineStyle);
+    unset($LineStyle);
+
+    $Arrows = $dom->createElement('y:Arrows');
+    $Arrows->setAttribute('souce', 'none');
+    $Arrows->setAttribute('target', 'white_delta');
+    $PolyLineEdge->appendChild($Arrows);
+    unset($Arrows);
+
+    $EdgeLabel = $dom->createElement('y:EdgeLabel', 'PrIvEt');
+    $EdgeLabel->setAttribute('alignment', 'center');
+    $EdgeLabel->setAttribute('distance', '2.0');
+    $EdgeLabel->setAttribute('fontFamily', 'Dialog');
+    $EdgeLabel->setAttribute('fontSize', '12');
+    $EdgeLabel->setAttribute('fontStyle', 'plain');
+    $EdgeLabel->setAttribute('hasBackgroundColor', 'false');
+    $EdgeLabel->setAttribute('hasLineColor', 'false');
+    $EdgeLabel->setAttribute('height', '4.0');
+    $EdgeLabel->setAttribute('modelName', 'six_pos');
+    $EdgeLabel->setAttribute('modelPosition', 'tail');
+    $EdgeLabel->setAttribute('preferredPlacement', 'anywhere');
+    $EdgeLabel->setAttribute('ratio', '0.5');
+    $EdgeLabel->setAttribute('textcolor', '#000000');
+    $EdgeLabel->setAttribute('visible', 'true');
+    $EdgeLabel->setAttribute('width', '4.0');
+    $PolyLineEdge->appendChild($EdgeLabel);
+    unset($EdgeLabel);
+
+    $BendStyle = $dom->createElement('y:BendStyle');
+    $BendStyle->setAttribute('smoothed', 'false');
+    $PolyLineEdge->appendChild($BendStyle);
+    unset($BendStyle);
+
+    $data->appendChild($PolyLineEdge);
+    unset($PolyLineEdge);
+    $edge->appendChild($data);
+    unset($data);
+
+
+    $this->sGeneratedEdges = '';
+    foreach ($this->aEdgeData as $source => $values) {
+      foreach ($values as $target_id) {
+        $edge->setAttribute('id', 'e' . $this->iEdgeNumber++);
+        $edge->setAttribute('source', 'n' . $source);
+        $edge->setAttribute('target', 'n' . $target_id);
+
+        $rr .= $dom->saveXML($edge);
+        $this->sGeneratedEdges .= $dom->saveXML($edge);
+      }
+    }
+    unset($edge);
+    unset($dom);
+  }
+
+  /**
+   * 
+   *  Создание узла в графическом представлении
+   * 
+   *     $options = array(
+   *   'NodeBorderStyle' => array(
+   *     'color' => '#ffcc00'
+   *     )
+   *   ); 
+   * 
+   * @param string $sFileName filename to process 
+   */
+  public function addNode($sTitle, $aAttributes, $aMethods, $options = NULL) {
+    // Сначала устанавливаем нобходимый минимум для опций узла
+    $this->setNodeDefault();
+    // Затем смотрим были ли переданы новые опции, если есть переназначим их
+    if (!is_null($options) && is_array($options)) {
+      foreach ($options as $name => $opts) {
+        foreach ($opts as $key => $value) {
+          $this->{$name}[$key] = $value;
+        }
+      }
+    }
+
+    $this->sNodeLabel = $sTitle;
+    $this->aAttributes = $aAttributes;
+    $this->aMethods = $aMethods;
+//    if (!is_null($aParent))
+//      $this->aEdgeData[$this->sNodeLabel] = $aParent;   
+    $this->aClassData[$this->sNodeLabel] = $this->iNodeNumber;
+    /* If it's not a class, then we won't work with it */
+    $id = $this->createNodes();
+    return $id;
+  }
+
+  public function addEdge($id_source, $id_target) {
+    $this->aEdgeData[$id_source][] = $id_target;
+  }
+
+  /**
+   * 
+   * Creates graphml file in initial directory 
+   * 
+   */
+  public function createFullGraphML($Filename) {
+    /* Create edges between objects */
+    $this->createEdges();
+
+    $sContent = str_replace('%%nodes%%', $this->sGeneratedNodes, $this->sFullTemplate);
+    $sContent = str_replace('%%edges%%', $this->sGeneratedEdges, $sContent);
+
+    if ($rFp = fopen($this->sDirectory . '/uml-' . date('Ymd_H-i-s') . '.graphml', 'w')) {
+      fputs($rFp, $sContent);
+      fclose($rFp);
+    }
+  }
+
+}
