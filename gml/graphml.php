@@ -21,7 +21,7 @@ class GraphML {
   protected $iNodeRows = 1;
   protected $iNodeColumn = 1;
   protected $iMaxNodeHeight = _MAX_NODE_HEIGHT;
-  //---------Nodes options
+  //---------Nodes options---------------------------------------------
   protected $defNodeFill = array(
     'color' => '#FFCC00',
     'transparent' => 'false',
@@ -51,6 +51,47 @@ class GraphML {
     'y' => '26.701171875',
   );
   protected $NodeLabel;
+  //---------Nodes options--------------------------------------------- END
+  //---------Edges options---------------------------------------------
+
+  protected $EdgePath;
+  protected $defEdgePath = array(
+    'sx' => '0.0',
+    'sy' => '0.0',
+    'tx' => '0.0',
+    'ty' => '0.0',
+  );
+  protected $EdgeLineStyle; 
+  protected $defEdgeLineStyle = array(
+    'color' => '#000000',
+    'type' => 'line',
+    'width' => '1.0',
+  );
+  protected $EdgeArrows; 
+  protected $defEdgeArrows = array(
+    'source' => 'none',
+    'target' => 'white_delta',
+  ); 
+  protected $EdgeLabel; 
+  protected $defEdgeLabel = array(
+    'alignment' => 'center',
+    'distance' => '2.0',
+    'fontFamily' => 'Dialog',
+    'fontSize' => '12',
+    'fontStyle'  => 'plain',
+    'hasBackgroundColor' => 'false',
+    'hasLineColor'  => 'false',
+    'height'  => '4.0',
+    'modelName' => 'six_pos',
+    'modelPosition' => 'tail',
+    'preferredPlacement'  => 'anywhere',
+    'ratio' => '0.5',
+    'textcolor' => '#000000',
+    'visible' => 'true',
+    'width' => '4.0',  
+  ); 
+
+  //---------Edges options--------------------------------------------- END
 
   /**
    *  ID линии связи
@@ -93,28 +134,25 @@ class GraphML {
    * @param string $sExcludeDir Don't read directories matching $sExcludeDir 
    */
   public function __construct($sDirectory = '.', $sExcludeDir = '') {
-
-    $this->setNodeDefault();
-
+    
     $this->sBaseDir = dirname(__FILE__) . '/';
-
     $this->sDirectory = $sDirectory;
 
-    /* Let's read the template files */
-    if (is_file($this->sBaseDir . $this->sTemplateDir . 'node.tpl')) {
-      $this->sNodeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/node.tpl');
-    }
-    else {
-      echo 'Node template file not found, exiting.' . "\n";
-      exit(1);
-    }
-    if (is_file($this->sBaseDir . $this->sTemplateDir . '/edge.tpl')) {
-      $this->sEdgeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/edge.tpl');
-    }
-    else {
-      echo 'Edge template file not found, exiting.' . "\n";
-      exit(1);
-    }
+//    /* Let's read the template files */
+//    if (is_file($this->sBaseDir . $this->sTemplateDir . 'node.tpl')) {
+//      $this->sNodeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/node.tpl');
+//    }
+//    else {
+//      echo 'Node template file not found, exiting.' . "\n";
+//      exit(1);
+//    }
+//    if (is_file($this->sBaseDir . $this->sTemplateDir . '/edge.tpl')) {
+//      $this->sEdgeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/edge.tpl');
+//    }
+//    else {
+//      echo 'Edge template file not found, exiting.' . "\n";
+//      exit(1);
+//    }
     if (is_file($this->sBaseDir . $this->sTemplateDir . '/full.tpl')) {
       $this->sFullTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/full.tpl');
     }
@@ -136,6 +174,14 @@ class GraphML {
     $this->NodeFill = $this->defNodeFill;
     $this->NodeBorderStyle = $this->defNodeBorderStyle;
     $this->NodeLabel = $this->defNodeLabel;
+  }
+
+  private function setEdgeDefault() {
+    $this->EdgePath = $this->defEdgePath;
+    $this->EdgeLineStyle = $this->defEdgeLineStyle;
+    $this->EdgeArrows = $this->defEdgeArrows;
+    $this->EdgeLabel = $this->defEdgeLabel;
+    
   }
 
   /**
@@ -266,42 +312,30 @@ class GraphML {
     $data->setAttribute('key', 'd6');
     $PolyLineEdge = $dom->createElement('y:PolyLineEdge');
     $Path = $dom->createElement('y:Path');
-    $Path->setAttribute('sx', '0.0');
-    $Path->setAttribute('sy', '0.0');
-    $Path->setAttribute('tx', '0.0');
-    $Path->setAttribute('tx', '0.0');
+    foreach ($this->EdgePath as $key => $value) {
+      $Path->setAttribute($key, $value);
+    }
     $PolyLineEdge->appendChild($Path);
     unset($Path);
 
     $LineStyle = $dom->createElement('y:LineStyle');
-    $LineStyle->setAttribute('color', '#000000');
-    $LineStyle->setAttribute('type', 'line');
-    $LineStyle->setAttribute('width', '1.0');
+    foreach ($this->EdgeLineStyle as $key => $value) {
+      $LineStyle->setAttribute($key, $value);
+    }    
     $PolyLineEdge->appendChild($LineStyle);
     unset($LineStyle);
 
     $Arrows = $dom->createElement('y:Arrows');
-    $Arrows->setAttribute('souce', 'none');
-    $Arrows->setAttribute('target', 'white_delta');
+    foreach ($this->EdgeArrows as $key => $value) {
+      $Arrows->setAttribute($key, $value);
+    }        
     $PolyLineEdge->appendChild($Arrows);
     unset($Arrows);
 
     $EdgeLabel = $dom->createElement('y:EdgeLabel', 'PrIvEt');
-    $EdgeLabel->setAttribute('alignment', 'center');
-    $EdgeLabel->setAttribute('distance', '2.0');
-    $EdgeLabel->setAttribute('fontFamily', 'Dialog');
-    $EdgeLabel->setAttribute('fontSize', '12');
-    $EdgeLabel->setAttribute('fontStyle', 'plain');
-    $EdgeLabel->setAttribute('hasBackgroundColor', 'false');
-    $EdgeLabel->setAttribute('hasLineColor', 'false');
-    $EdgeLabel->setAttribute('height', '4.0');
-    $EdgeLabel->setAttribute('modelName', 'six_pos');
-    $EdgeLabel->setAttribute('modelPosition', 'tail');
-    $EdgeLabel->setAttribute('preferredPlacement', 'anywhere');
-    $EdgeLabel->setAttribute('ratio', '0.5');
-    $EdgeLabel->setAttribute('textcolor', '#000000');
-    $EdgeLabel->setAttribute('visible', 'true');
-    $EdgeLabel->setAttribute('width', '4.0');
+    foreach ($this->EdgeLabel as $key => $value) {
+      $EdgeLabel->setAttribute($key, $value);
+    }            
     $PolyLineEdge->appendChild($EdgeLabel);
     unset($EdgeLabel);
 
@@ -366,7 +400,26 @@ class GraphML {
     return $id;
   }
 
-  public function addEdge($id_source, $id_target) {
+  /**
+   *  Collect data edges in memory between 2 nodes.
+   *  Собираем предварительно массив данных о связях м/у узлами.
+   *  
+   * 
+   * @param int $id_source 
+   * @param int $id_target
+   * @param array $options
+   */
+  public function addEdge($id_source, $id_target, $options = NULL) {
+    // Сначала устанавливаем необходимый минимум для опций
+    $this->setEdgeDefault();
+    // Затем смотрим были ли переданы новые опции, если есть переназначим их
+    if (!is_null($options) && is_array($options)) {
+      foreach ($options as $name => $opts) {
+        foreach ($opts as $key => $value) {
+          $this->{$name}[$key] = $value;
+        }
+      }
+    }
     $this->aEdgeData[$id_source][] = $id_target;
   }
 
