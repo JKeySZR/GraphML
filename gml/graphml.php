@@ -61,35 +61,35 @@ class GraphML {
     'tx' => '0.0',
     'ty' => '0.0',
   );
-  protected $EdgeLineStyle; 
+  protected $EdgeLineStyle;
   protected $defEdgeLineStyle = array(
     'color' => '#000000',
     'type' => 'line',
     'width' => '1.0',
   );
-  protected $EdgeArrows; 
+  protected $EdgeArrows;
   protected $defEdgeArrows = array(
     'source' => 'none',
     'target' => 'white_delta',
-  ); 
-  protected $EdgeLabel; 
+  );
+  protected $EdgeLabel;
   protected $defEdgeLabel = array(
     'alignment' => 'center',
     'distance' => '2.0',
     'fontFamily' => 'Dialog',
     'fontSize' => '12',
-    'fontStyle'  => 'plain',
+    'fontStyle' => 'plain',
     'hasBackgroundColor' => 'false',
-    'hasLineColor'  => 'false',
-    'height'  => '4.0',
+    'hasLineColor' => 'false',
+    'height' => '4.0',
     'modelName' => 'six_pos',
     'modelPosition' => 'tail',
-    'preferredPlacement'  => 'anywhere',
+    'preferredPlacement' => 'anywhere',
     'ratio' => '0.5',
     'textcolor' => '#000000',
     'visible' => 'true',
-    'width' => '4.0',  
-  ); 
+    'width' => '4.0',
+  );
 
   //---------Edges options--------------------------------------------- END
 
@@ -133,8 +133,8 @@ class GraphML {
    * @param string $sDirectory  Initial directory, this is the first dir where .php files will be searched 
    * @param string $sExcludeDir Don't read directories matching $sExcludeDir 
    */
-  public function __construct($sDirectory = '.', $sExcludeDir = '') {
-    
+  public function __construct() {
+
     $this->sBaseDir = dirname(__FILE__) . '/';
     $this->sDirectory = $sDirectory;
 
@@ -181,7 +181,18 @@ class GraphML {
     $this->EdgeLineStyle = $this->defEdgeLineStyle;
     $this->EdgeArrows = $this->defEdgeArrows;
     $this->EdgeLabel = $this->defEdgeLabel;
-    
+  }
+
+  private function setEdgeOptions($aOptions = NULL) {
+    $this->setEdgeDefault();
+    // Затем смотрим были ли переданы новые опции, если есть переназначим их
+    if (!is_null($aOptions) && is_array($aOptions)) {
+      foreach ($aOptions as $name => $opts) {
+        foreach ($opts as $key => $value) {
+          $this->{$name}[$key] = $value;
+        }
+      }
+    }
   }
 
   /**
@@ -296,66 +307,67 @@ class GraphML {
    * 
    */
   protected function createEdges() {
+    $this->sGeneratedEdges = '';
+
 
     //Создает XML-строку и XML-документ при помощи DOM 
     $dom = new DOMDocument();
     $dom->formatOutput = true; // мы хотим красивый вывод
     $dom->loadXML($this->syEdTemplate);
-
     $edge = $dom->createElement('edge');
     $edge->setAttribute('id', 'e' . $this->iEdgeNumber++);
     $edge->setAttribute('source', '');
     $edge->setAttribute('target', '');
 
-
-    $data = $dom->createElement('data');
-    $data->setAttribute('key', 'd6');
-    $PolyLineEdge = $dom->createElement('y:PolyLineEdge');
-    $Path = $dom->createElement('y:Path');
-    foreach ($this->EdgePath as $key => $value) {
-      $Path->setAttribute($key, $value);
-    }
-    $PolyLineEdge->appendChild($Path);
-    unset($Path);
-
-    $LineStyle = $dom->createElement('y:LineStyle');
-    foreach ($this->EdgeLineStyle as $key => $value) {
-      $LineStyle->setAttribute($key, $value);
-    }    
-    $PolyLineEdge->appendChild($LineStyle);
-    unset($LineStyle);
-
-    $Arrows = $dom->createElement('y:Arrows');
-    foreach ($this->EdgeArrows as $key => $value) {
-      $Arrows->setAttribute($key, $value);
-    }        
-    $PolyLineEdge->appendChild($Arrows);
-    unset($Arrows);
-
-    $EdgeLabel = $dom->createElement('y:EdgeLabel', 'PrIvEt');
-    foreach ($this->EdgeLabel as $key => $value) {
-      $EdgeLabel->setAttribute($key, $value);
-    }            
-    $PolyLineEdge->appendChild($EdgeLabel);
-    unset($EdgeLabel);
-
-    $BendStyle = $dom->createElement('y:BendStyle');
-    $BendStyle->setAttribute('smoothed', 'false');
-    $PolyLineEdge->appendChild($BendStyle);
-    unset($BendStyle);
-
-    $data->appendChild($PolyLineEdge);
-    unset($PolyLineEdge);
-    $edge->appendChild($data);
-    unset($data);
-
-
-    $this->sGeneratedEdges = '';
     foreach ($this->aEdgeData as $source => $values) {
-      foreach ($values as $target_id) {
+      foreach ($values as $edge_item) {
+        // Сначала устанавливаем необходимый минимум для опций и применяем специфичные для данного узла
+        $this->setEdgeOptions($edge_item['options']);
+
         $edge->setAttribute('id', 'e' . $this->iEdgeNumber++);
         $edge->setAttribute('source', 'n' . $source);
-        $edge->setAttribute('target', 'n' . $target_id);
+        $edge->setAttribute('target', 'n' . $edge_item['target']);
+
+        $data = $dom->createElement('data');
+        $data->setAttribute('key', 'd6');
+        $PolyLineEdge = $dom->createElement('y:PolyLineEdge');
+        $Path = $dom->createElement('y:Path');
+        foreach ($this->EdgePath as $key => $value) {
+          $Path->setAttribute($key, $value);
+        }
+        $PolyLineEdge->appendChild($Path);
+        unset($Path);
+
+        $LineStyle = $dom->createElement('y:LineStyle');
+        foreach ($this->EdgeLineStyle as $key => $value) {
+          $LineStyle->setAttribute($key, $value);
+        }
+        $PolyLineEdge->appendChild($LineStyle);
+        unset($LineStyle);
+
+        $Arrows = $dom->createElement('y:Arrows');
+        foreach ($this->EdgeArrows as $key => $value) {
+          $Arrows->setAttribute($key, $value);
+        }
+        $PolyLineEdge->appendChild($Arrows);
+        unset($Arrows);
+
+        $EdgeLabel = $dom->createElement('y:EdgeLabel', $edge_item['label']);
+        foreach ($this->EdgeLabel as $key => $value) {
+          $EdgeLabel->setAttribute($key, $value);
+        }
+        $PolyLineEdge->appendChild($EdgeLabel);
+        unset($EdgeLabel);
+
+        $BendStyle = $dom->createElement('y:BendStyle');
+        $BendStyle->setAttribute('smoothed', 'false');
+        $PolyLineEdge->appendChild($BendStyle);
+        unset($BendStyle);
+
+        $data->appendChild($PolyLineEdge);
+        unset($PolyLineEdge);
+        $edge->appendChild($data);
+        unset($data);
 
         $rr .= $dom->saveXML($edge);
         $this->sGeneratedEdges .= $dom->saveXML($edge);
@@ -407,35 +419,37 @@ class GraphML {
    * 
    * @param int $id_source 
    * @param int $id_target
+   * @param string $edgeLabel 
    * @param array $options
    */
-  public function addEdge($id_source, $id_target, $options = NULL) {
-    // Сначала устанавливаем необходимый минимум для опций
-    $this->setEdgeDefault();
-    // Затем смотрим были ли переданы новые опции, если есть переназначим их
-    if (!is_null($options) && is_array($options)) {
-      foreach ($options as $name => $opts) {
-        foreach ($opts as $key => $value) {
-          $this->{$name}[$key] = $value;
-        }
-      }
-    }
-    $this->aEdgeData[$id_source][] = $id_target;
+  public function addEdge($id_source, $id_target, $edgeLabel = '', $options = NULL) {
+    
+   // Validation data here, if not - return false if good set and return true< must be =)
+    
+    $this->aEdgeData[$id_source][] = array(
+      'target' => $id_target,
+      'label' => $edgeLabel,
+      'options' => $options,
+    ); //;
   }
 
   /**
-   * 
    * Creates graphml file in initial directory 
    * 
+   * @param string $Filename Path to file
    */
-  public function createFullGraphML($Filename) {
+  public function createFullGraphML($Filename = NULL) {
     /* Create edges between objects */
     $this->createEdges();
 
     $sContent = str_replace('%%nodes%%', $this->sGeneratedNodes, $this->sFullTemplate);
     $sContent = str_replace('%%edges%%', $this->sGeneratedEdges, $sContent);
 
-    if ($rFp = fopen($this->sDirectory . '/uml-' . date('Ymd_H-i-s') . '.graphml', 'w')) {
+    if (is_null($Filename)) {
+      $Filename = $this->sDirectory . '/uml-' . date('Ymd_H-i-s') . '.graphml';
+    }
+
+    if ($rFp = fopen($Filename, 'w')) {
       fputs($rFp, $sContent);
       fclose($rFp);
     }
