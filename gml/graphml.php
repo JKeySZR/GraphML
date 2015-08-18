@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Description of graphml
- *
+ * Class for create graph in graphml format
+ * 
+ * 
  * @author JKeySZR 
  * @link   https://github.com/JKeySZR/GraphML
  */
@@ -24,6 +25,11 @@ class GraphML {
     //---------Nodes options---------------------------------------------
 
     protected $defNodeType = 'ShapeNode'; // UMLClassNode ShapeNode GenericNode SVGNode
+
+    /**
+     * Тип создаваемого графического объекта
+     * @var string  Avaliable variant: UMLClassNode | ShapeNode | GenericNode | SVGNode 
+     */
     protected $NodeType;
     protected $defNodeShape = array(
         'type' => 'rectangle',
