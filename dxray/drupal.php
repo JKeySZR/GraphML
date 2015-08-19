@@ -5,6 +5,26 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+define('DXRAY_MSG_STATUS', 0);
+define('DXRAY_MSG_INFO', 1);
+define('DXRAY_MSG_WARNING', 2);
+define('DXRAY_MSG_ERROR', 3);
+define('DXRAY_MSG_DEBUG', 4);
+
+function dxray_debug_stdout($msg, $type = DXRAY_MSG_STATUS) {
+  switch ($type) {
+    case DXRAY_MSG_STATUS:
+      echo $msg . PHP_EOL;
+      break;
+    case DXRAY_MSG_DEBUG:
+      echo "[DEBUG] " .  var_dump(debug_backtrace()) . $msg . PHP_EOL;
+      break;
+
+    default:
+      echo $msg . PHP_EOL;
+      break;
+  }
+}
 
 /**
  *  Получаем список NODE_TYPE
@@ -34,16 +54,17 @@ function dxray_get_node_type() {
     $options['NodeFill']['color'] = '#ccffff';
     $ID_bundle = $GML->addNode($oType->name, 'UMLClassNode', $options, $data);
     
+    dxray_debug_stdout('Добавили bundle номер: ' . $ID_bundle );
     // 2. Получаем поля данного контента и строем зависимости
     $fields = field_info_instances('node', $oType->type);
     foreach ($fields as $field) {
       $finfo = field_info_field($field['field_name']);
-      $data['attributes'] = array(        
+      $data['attributes'] = array(
         'Label: ' . $field['label'],
         'Required: ' . $field['required'],
         'Module: ' . $finfo['module'],
         'Locked: ' . $finfo['locked'],
-        'Cardinality: ' . $finfo['cardinality'],        
+        'Cardinality: ' . $finfo['cardinality'],
         'Description: ' . $field['description'],
       );
 
@@ -53,16 +74,17 @@ function dxray_get_node_type() {
         'Required: ' . $field['required'] . '<br>',
         '<b>Module:</b> ' . $finfo['module'] . '<br>',
         'Locked: ' . $finfo['locked'] . '<br>',
-        'Cardinality: ' . $finfo['cardinality'] . '<br>',        
+        'Cardinality: ' . $finfo['cardinality'] . '<br>',
         'Description: ' . $field['description'] . '<br>',
         '</html>',
       );
 
-      
+
       $ID_field = $GML->addNode($field['field_name'], 'UMLClassNode', null, $dataHTML);
+      dxray_debug_stdout('Добавили field номер: ' . $ID_field );
+      dxray_debug_stdout("{EDGE} SRC: $ID_bundle TARGET: $ID_field " . $ID_field );
       $GML->addEdge($ID_bundle, $ID_field);
-    }    
-    
+    }
   }
 
   $file = DXRAY_OUTPATH . '/NodeType-' . date('d-m-Y_H-i-s') . '.graphml';
@@ -92,7 +114,6 @@ function dxray_get_fields_info() {
   }
   $file = DXRAY_OUTPATH . '/FieldS-' . date('d-m-Y_H-i-s') . '.graphml';
   $GML->createFullGraphML($file);
-
 }
 
 /**
