@@ -376,13 +376,18 @@ class GraphML {
     $dom = new DOMDocument();
     $dom->formatOutput = true; // мы хотим красивый вывод
     $dom->loadXML($this->syEdTemplate);
-    $edge = $dom->createElement('edge');
-    $edge->setAttribute('id', 'e' . $this->iEdgeNumber++);
-    $edge->setAttribute('source', '');
-    $edge->setAttribute('target', '');
-
+    echo "Count of EdgeData: " . count($this->aEdgeData) . PHP_EOL;
+    $cnt = 0;
     foreach ($this->aEdgeData as $source => $values) {
       foreach ($values as $edge_item) {
+        
+        $edge = $dom->createElement('edge');
+        $edge->setAttribute('id', 'e' . $this->iEdgeNumber++);
+        $edge->setAttribute('source', '');
+        $edge->setAttribute('target', '');
+        
+        $cnt++;
+        echo "[$cnt]" . $this->echo_memory_usage();
         // Сначала устанавливаем необходимый минимум для опций и применяем специфичные для данного узла
         $this->setEdgeOptions($edge_item['options']);
 
@@ -431,12 +436,38 @@ class GraphML {
         $edge->appendChild($data);
         unset($data);
 
-        $rr .= $dom->saveXML($edge);
-        $this->sGeneratedEdges .= $dom->saveXML($edge);
+        $this->sGeneratedEdges .= $dom->saveXML($edge) . PHP_EOL;
+        //$this->echo_strsize(strlen($this->sGeneratedEdges));
+        unset($edge);
       }
-    }
-    unset($edge);
+    }    
     unset($dom);
+  }
+
+  protected function echo_strsize($mem_usage) {
+    //$mem_usage = strlen($string); 
+
+    if ($mem_usage < 1024)
+      echo 'String size: ' . $mem_usage . " bytes";
+    elseif ($mem_usage < 1048576)
+      echo 'String size: ' . round($mem_usage / 1024, 2) . " kilobytes";
+    else
+      echo 'String size: ' . round($mem_usage / 1048576, 2) . " megabytes";
+
+    echo PHP_EOL;
+  }
+
+  protected function echo_memory_usage() {
+    $mem_usage = memory_get_usage(true);
+
+    if ($mem_usage < 1024)
+      echo $mem_usage . " bytes";
+    elseif ($mem_usage < 1048576)
+      echo round($mem_usage / 1024, 2) . " kilobytes";
+    else
+      echo round($mem_usage / 1048576, 2) . " megabytes";
+
+    echo PHP_EOL;
   }
 
   /**
@@ -541,15 +572,14 @@ class GML_NODEOPT {
 }
 
 abstract class GML_EDGEOPT {
-  
-  public $options =  array();
-  
-  public $EdgePath =  array(
+
+  public $options = array();
+  public $EdgePath = array(
     'sx' => '0.0',
     'sy' => '0.0',
     'tx' => '0.0',
     'ty' => '0.0',
-  );  
+  );
   public $EdgeLineStyle = array(
     'color' => '#000000',
     'type' => 'line',
@@ -559,9 +589,7 @@ abstract class GML_EDGEOPT {
     'source' => 'none',
     'target' => 'white_delta',
   );
-
   public $EdgeArrows_source = 'none';
-  
   public $EdgeLabel = array(
     'alignment' => 'center',
     'distance' => '2.0',
