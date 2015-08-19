@@ -17,6 +17,7 @@ function dxray_get_node_type() {
 
   $aNtypes = node_type_get_types();
   foreach ($aNtypes as $oType) {
+    // 1. Сначала создаем узел NODE_TYPE 
     $data['attributes'] = array(
       'Base: ' . $oType->base,
       'Type: ' . $oType->type,
@@ -30,7 +31,38 @@ function dxray_get_node_type() {
       'Title label: ' . $oType->title_label,
       'Module: ' . $oType->module,
     );
-    $ID = $GML->addNode($oType->name, 'UMLClassNode', null, $data);
+    $options['NodeFill']['color'] = '#ccffff';
+    $ID_bundle = $GML->addNode($oType->name, 'UMLClassNode', $options, $data);
+    
+    // 2. Получаем поля данного контента и строем зависимости
+    $fields = field_info_instances('node', $oType->type);
+    foreach ($fields as $field) {
+      $finfo = field_info_field($field['field_name']);
+      $data['attributes'] = array(        
+        'Label: ' . $field['label'],
+        'Required: ' . $field['required'],
+        'Module: ' . $finfo['module'],
+        'Locked: ' . $finfo['locked'],
+        'Cardinality: ' . $finfo['cardinality'],        
+        'Description: ' . $field['description'],
+      );
+
+      $dataHTML['attributes'] = array(
+        '<html>',
+        'Label: ' . $field['label'] . '<br>',
+        'Required: ' . $field['required'] . '<br>',
+        '<b>Module:</b> ' . $finfo['module'] . '<br>',
+        'Locked: ' . $finfo['locked'] . '<br>',
+        'Cardinality: ' . $finfo['cardinality'] . '<br>',        
+        'Description: ' . $field['description'] . '<br>',
+        '</html>',
+      );
+
+      
+      $ID_field = $GML->addNode($field['field_name'], 'UMLClassNode', null, $dataHTML);
+      $GML->addEdge($ID_bundle, $ID_field);
+    }    
+    
   }
 
   $file = DXRAY_OUTPATH . '/NodeType-' . date('d-m-Y_H-i-s') . '.graphml';
@@ -54,15 +86,22 @@ function dxray_get_fields_info() {
       'Module: ' . $field['module'],
     );
     //$field['bundles'] ['node'][0] = 'faq';        
-    $ID = $GML->addNode($field['field_name'],'UMLClassNode', null , $data);
+    $ID = $GML->addNode($field['field_name'], 'UMLClassNode', null, $data);
     _dxray_parse_bundles($ID, $field['bundles'], $REID, $GML);
     $REID['nodes'][$field['field_name']] = $ID;
   }
   $file = DXRAY_OUTPATH . '/FieldS-' . date('d-m-Y_H-i-s') . '.graphml';
   $GML->createFullGraphML($file);
-  $dbg = 0;
+
 }
 
+/**
+ *  Вспомогательная функция для dxray_get_fields_info() по разбору bundles
+ * @param type $IDFIELD
+ * @param type $bundles
+ * @param type $REID
+ * @param type $GML
+ */
 function _dxray_parse_bundles(&$IDFIELD, &$bundles, &$REID, &$GML) {
   foreach ($bundles as $entity => $items) {
     // 1. Шаг первый смотрим что за название сущности
@@ -82,16 +121,16 @@ function _dxray_parse_bundles(&$IDFIELD, &$bundles, &$REID, &$GML) {
       }
       $idEntity = $REID['nodes'][$entity];
       $idBundle = $REID['nodes'][$name];
+      // Проверяем есть ли уже такая связь между сущностью и эпостасью
       if (!isset($REID['edges'][$idEntity][$idBundle])) {
         $GML->addEdge($idEntity, $idBundle);
         $REID['edges'][$idEntity][$idBundle] = 1;
       }
-
+      // Проверяем есть ли уже такая связь между эпостасью и ее полями
       if (!isset($REID['edges'][$idBundle][$IDFIELD])) {
-        $GML->addEdge($idBundle, $IDFIELD);    
+        $GML->addEdge($idBundle, $IDFIELD);
         $REID['edges'][$idBundle][$IDFIELD] = 1;
       }
-      
     }
   }
 }
