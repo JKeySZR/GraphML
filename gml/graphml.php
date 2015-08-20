@@ -9,6 +9,7 @@
  */
 define('_MAX_NODE_HEIGHT', 50);
 define('_MAX_NODE_PER_COLUMN', 5);
+include './graphml_options.php';
 
 class GraphML {
 
@@ -116,9 +117,7 @@ class GraphML {
     'visible' => 'true',
     'width' => '4.0',
   );
-
-  //---------Edges options--------------------------------------------- END
-
+  //---------Edges options--------------------------------------------- END  
   /**
    *  ID линии связи
    * @var int  
@@ -380,12 +379,12 @@ class GraphML {
     $cnt = 0;
     foreach ($this->aEdgeData as $source => $values) {
       foreach ($values as $edge_item) {
-        
+
         $edge = $dom->createElement('edge');
         $edge->setAttribute('id', 'e' . $this->iEdgeNumber++);
         $edge->setAttribute('source', '');
         $edge->setAttribute('target', '');
-        
+
         $cnt++;
         echo "[$cnt]" . $this->echo_memory_usage();
         // Сначала устанавливаем необходимый минимум для опций и применяем специфичные для данного узла
@@ -440,7 +439,7 @@ class GraphML {
         //$this->echo_strsize(strlen($this->sGeneratedEdges));
         unset($edge);
       }
-    }    
+    }
     unset($dom);
   }
 
@@ -564,48 +563,3 @@ class GraphML {
 
 }
 
-/**
- *  Вспомогательный клас,в котором необходимо описать возможные опции
- */
-class GML_NODEOPT {
-  
-}
-
-abstract class GML_EDGEOPT {
-
-  public $options = array();
-  public $EdgePath = array(
-    'sx' => '0.0',
-    'sy' => '0.0',
-    'tx' => '0.0',
-    'ty' => '0.0',
-  );
-  public $EdgeLineStyle = array(
-    'color' => '#000000',
-    'type' => 'line',
-    'width' => '1.0',
-  );
-  public $EdgeArrows = array(
-    'source' => 'none',
-    'target' => 'white_delta',
-  );
-  public $EdgeArrows_source = 'none';
-  public $EdgeLabel = array(
-    'alignment' => 'center',
-    'distance' => '2.0',
-    'fontFamily' => 'Dialog',
-    'fontSize' => '12',
-    'fontStyle' => 'plain',
-    'hasBackgroundColor' => 'false',
-    'hasLineColor' => 'false',
-    'height' => '4.0',
-    'modelName' => 'six_pos',
-    'modelPosition' => 'tail',
-    'preferredPlacement' => 'anywhere',
-    'ratio' => '0.5',
-    'textcolor' => '#000000',
-    'visible' => 'true',
-    'width' => '4.0',
-  );
-
-}
