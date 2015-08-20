@@ -34,7 +34,12 @@ function dxray_debug_stdout($msg, $type = DXRAY_MSG_STATUS) {
  */
 function dxray_get_node_type() {
   $GML = new GraphML();
-
+  
+  $optN1 = $GML->setOptionsNode()
+    ->NodeFill_setColor('#ccffff')
+    ->NodeLabel_setFontSize('22')
+    ->getOptions();
+  
   $aNtypes = node_type_get_types();
   foreach ($aNtypes as $oType) {
     // 1. Сначала создаем узел NODE_TYPE 
@@ -52,7 +57,7 @@ function dxray_get_node_type() {
       'Module: ' . $oType->module,
     );
     $options['NodeFill']['color'] = '#ccffff';
-    $ID_bundle = $GML->addNode($oType->name, 'UMLClassNode', $options, $data);
+    $ID_bundle = $GML->addNode($oType->name, 'UMLClassNode', $optN1, $data);
     
     dxray_debug_stdout('Добавили bundle номер: ' . $ID_bundle );
     // 2. Получаем поля данного контента и строем зависимости
@@ -132,6 +137,10 @@ function _dxray_parse_bundles(&$IDFIELD, &$bundles, &$REID, &$GML) {
       $ID = $GML->addNode($entity, 'ShapeNode', $options);
       $REID['nodes'][$entity] = $ID;
     }
+    
+    $edge = new GML_EDGEOPT;
+    $edge->LineStyle_setColor('#ffaaff');
+    
     // 2. Шаг второй перебираем ипостаси этой сущности
     foreach ($items as $name) {
       if (!isset($REID['nodes'][$name])) {
@@ -144,7 +153,7 @@ function _dxray_parse_bundles(&$IDFIELD, &$bundles, &$REID, &$GML) {
       $idBundle = $REID['nodes'][$name];
       // Проверяем есть ли уже такая связь между сущностью и эпостасью
       if (!isset($REID['edges'][$idEntity][$idBundle])) {
-        $GML->addEdge($idEntity, $idBundle);
+        $GML->addEdge($idEntity, $idBundle,'',$edge->getOptions());
         $REID['edges'][$idEntity][$idBundle] = 1;
       }
       // Проверяем есть ли уже такая связь между эпостасью и ее полями

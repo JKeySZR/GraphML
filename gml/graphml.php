@@ -9,7 +9,7 @@
  */
 define('_MAX_NODE_HEIGHT', 50);
 define('_MAX_NODE_PER_COLUMN', 5);
-include './graphml_options.php';
+include 'graphml_options.php';
 
 class GraphML {
 
@@ -31,92 +31,21 @@ class GraphML {
    * Тип создаваемого графического объекта
    * @var string  Avaliable variant: UMLClassNode | ShapeNode | GenericNode | SVGNode 
    */
+  public $NodeOptions;
   protected $NodeType;
-  protected $defNodeShape = array(
-    'type' => 'rectangle',
-  );
   protected $NodeShape;
-  protected $NodeShapeTypes = array(
-    "rectangle",
-    "roundrectangle",
-    "ellipse",
-    "parallelogram",
-    "hexagon",
-    "triangle",
-    "rectangle3d",
-    "octagon",
-    "diamond",
-    "trapezoid",
-    "trapezoid2"
-  );
-  protected $defNodeFill = array(
-    'color' => '#FFCC00',
-    'transparent' => 'false',
-  );
   protected $NodeFill;
-  protected $defNodeBorderStyle = array(
-    'color' => '#000000',
-    'type' => 'line',
-    'width' => '1.0',
-  );
   protected $NodeBorderStyle;
-  protected $defNodeLabel = array(
-    'alignment' => 'center',
-    'autoSizePolicy' => 'content',
-    'fontFamily' => 'Dialog',
-    'fontSize' => '13',
-    'fontStyle' => 'bold',
-    'hasBackgroundColor' => 'false',
-    'hasLineColor' => 'false',
-    'height' => '19.92626953125',
-    'modelName' => 'internal',
-    'modelPosition' => 'c',
-    'textColor' => '#000000',
-    'visible' => 'true',
-    'width' => '33.6181640625',
-    'x' => '67.69091796875',
-    'y' => '26.701171875',
-  );
   protected $NodeLabel;
   //---------Nodes options--------------------------------------------- END
-  //---------Edges options---------------------------------------------
 
+  //---------Edges options---------------------------------------------
+  public $EdgeOptions;
   protected $EdgePath;
-  protected $defEdgePath = array(
-    'sx' => '0.0',
-    'sy' => '0.0',
-    'tx' => '0.0',
-    'ty' => '0.0',
-  );
   protected $EdgeLineStyle;
-  protected $defEdgeLineStyle = array(
-    'color' => '#000000',
-    'type' => 'line',
-    'width' => '1.0',
-  );
   protected $EdgeArrows;
-  protected $defEdgeArrows = array(
-    'source' => 'none',
-    'target' => 'white_delta',
-  );
   protected $EdgeLabel;
-  protected $defEdgeLabel = array(
-    'alignment' => 'center',
-    'distance' => '2.0',
-    'fontFamily' => 'Dialog',
-    'fontSize' => '12',
-    'fontStyle' => 'plain',
-    'hasBackgroundColor' => 'false',
-    'hasLineColor' => 'false',
-    'height' => '4.0',
-    'modelName' => 'six_pos',
-    'modelPosition' => 'tail',
-    'preferredPlacement' => 'anywhere',
-    'ratio' => '0.5',
-    'textcolor' => '#000000',
-    'visible' => 'true',
-    'width' => '4.0',
-  );
+
   //---------Edges options--------------------------------------------- END  
   /**
    *  ID линии связи
@@ -159,25 +88,12 @@ class GraphML {
    * @param string $sExcludeDir Don't read directories matching $sExcludeDir 
    */
   public function __construct() {
+    $this->NodeOptions = new GML_NODEOPT();
+    $this->EdgeOptions = new GML_EDGEOPT();
 
     $this->sBaseDir = dirname(__FILE__) . '/';
     $this->sDirectory = $sDirectory;
 
-//    /* Let's read the template files */
-//    if (is_file($this->sBaseDir . $this->sTemplateDir . 'node.tpl')) {
-//      $this->sNodeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/node.tpl');
-//    }
-//    else {
-//      echo 'Node template file not found, exiting.' . "\n";
-//      exit(1);
-//    }
-//    if (is_file($this->sBaseDir . $this->sTemplateDir . '/edge.tpl')) {
-//      $this->sEdgeTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/edge.tpl');
-//    }
-//    else {
-//      echo 'Edge template file not found, exiting.' . "\n";
-//      exit(1);
-//    }
     if (is_file($this->sBaseDir . $this->sTemplateDir . '/full.tpl')) {
       $this->sFullTemplate = file_get_contents($this->sBaseDir . $this->sTemplateDir . '/full.tpl');
     }
@@ -195,19 +111,29 @@ class GraphML {
     }
   }
 
-  private function setNodeDefault() {
-    $this->NodeType = $this->defNodeType;
-    $this->NodeShape = $this->defNodeShape;
-    $this->NodeFill = $this->defNodeFill;
-    $this->NodeBorderStyle = $this->defNodeBorderStyle;
-    $this->NodeLabel = $this->defNodeLabel;
+  public static function setOptionsNode() {    
+    return new GML_NODEOPT;
+  }
+  public static function setOptionsEdge() {    
+    return new GML_EDGEOPT;
+  }
+  
+  
+  private function setNodeDefault() {    
+    $options = &$this->NodeOptions;
+    $this->NodeType = $options->getOptions('NodeType');
+    $this->NodeShape = $options->getOptions('NodeShape');
+    $this->NodeFill = $options->getOptions('NodeFill');
+    $this->NodeBorderStyle = $options->getOptions('NodeBorderStyle');
+    $this->NodeLabel = $options->getOptions('NodeLabel');
   }
 
   private function setEdgeDefault() {
-    $this->EdgePath = $this->defEdgePath;
-    $this->EdgeLineStyle = $this->defEdgeLineStyle;
-    $this->EdgeArrows = $this->defEdgeArrows;
-    $this->EdgeLabel = $this->defEdgeLabel;
+    $options = &$this->EdgeOptions;
+    $this->EdgePath = $options->getOptions('EdgePath');
+    $this->EdgeLineStyle = $options->getOptions('EdgeLineStyle');
+    $this->EdgeArrows = $options->getOptions('EdgeArrows');
+    $this->EdgeLabel = $options->getOptions('EdgeLabel');
   }
 
   private function setEdgeOptions($aOptions = NULL) {
