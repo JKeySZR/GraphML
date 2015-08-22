@@ -126,7 +126,9 @@ class GraphML {
     $this->NodeFill = $options->getOptions('NodeFill');
     $this->NodeBorderStyle = $options->getOptions('NodeBorderStyle');
     $this->NodeLabel = $options->getOptions('NodeLabel');
-  }
+    $this->aAttributes = array();
+    $this->aMethods = array();
+}
 
   private function setEdgeDefault() {
     $options = &$this->EdgeOptions;
@@ -159,6 +161,7 @@ class GraphML {
     }
     //$iNodeHeight = $this->iMaxNodeHeight;        
     // Count size node based on sise of font.
+    // !!! NOT WILL BE ZERRO!!!
     $iNodeHeight = $this->NodeLabel['fontSize'] + 15;
     $iNodeWidth = mb_strlen($this->sNodeLabel) * 8.5;
     $iNodeNumber = $this->iNodeNumber;
@@ -213,7 +216,12 @@ class GraphML {
         break;
 
       case 'ShapeNode':
+        $cnt_len = mb_strlen($this->sNodeLabel);
+        if($cnt_len <= 0){
+          $iNodeWidth = 37;
+        }else{
         $iNodeWidth = mb_strlen($this->sNodeLabel) * 8.5;
+        }
         $wrapperInnerData = $dom->createElement('y:ShapeNode');
         $ShapeType = $dom->createElement('y:Shape');
         $ShapeType->setAttribute('type', $this->NodeShape['type']);
@@ -482,10 +490,22 @@ class GraphML {
    * @param type $sTitle
    * @param type $options
    */
-  public function addNodeShape($sTitle, $options) {
+  public function addNodeShape($sTitle, $options = NULL) {
     $id = $this->addNode($sTitle, 'ShapeNode', $options);
     return $id;
   }
 
+  /**
+   * 
+   * @param type $sTitle
+   * @param arrray $data['attributes'] $data['methods']
+   * @param type $options
+   * @return type
+   */
+  public function addNodeUMLClass($sTitle, $data = NULL, $options = NULL) {
+    $id = $this->addNode($sTitle, 'UMLClassNode', $options, $data);
+    return $id;
+  }  
+  
 }
 
